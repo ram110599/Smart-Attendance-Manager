@@ -10,13 +10,6 @@ package.json has list of reuirements of the project
 
 
 
-var error = {param: "id", msg: "Invalid user id or password", value: req.body.id};
-				if(!errors){
-					errors = [];
-				}
-				errors.push(error);
-
-
 Operating git:
 git pull
 git add *
