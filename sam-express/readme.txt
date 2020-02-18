@@ -1,8 +1,4 @@
 We are using node.js as well as epress framework.
-To run, simple open terminal and do- node server.js
-then open any browser and write localhost:<port no.>
-
-
 
 
 ============
