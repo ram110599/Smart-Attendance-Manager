@@ -1,4 +1,4 @@
-We are using node.js as well as epress framework.
+We are using node.js in combination with express framework.
 
 
 ============
