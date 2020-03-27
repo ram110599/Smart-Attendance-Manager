@@ -7,6 +7,8 @@ var logger = require('morgan');
 var hbs = require('express-handlebars');
 var expressValidator = require('express-validator');
 var expressSession = require('express-session');
+var crypto = require('crypto');
+
 var mysql = require('mysql');
 var connection = mysql.createConnection({
 	host     : 'localhost',

@@ -15,3 +15,7 @@ git pull
 git add *
 git commit -m "..."
 git push -u origin master
+
+TODO:
+set crypto with salt for passwords
+set crypto.randomBytes(64).toString('base64'); at time of creating token while resetting password.
