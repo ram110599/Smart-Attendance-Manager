@@ -23,5 +23,5 @@ make sure to clear the session errors when required(whenever errors are set then
 delete expired tokens regularly
 see all errors and make sure which ones should be displayed to the user. Also, handle all the ERRORS properly.
 convert the error messages to flash messages
-comment and INDENT, also correct the names
-check all end-cases
+comment and INDENT, also correct the NAMES(use _ instead of -; Start class name in capital and proper camelCase)
+check all END-CASES

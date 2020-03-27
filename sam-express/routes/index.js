@@ -10,12 +10,14 @@ const transport = nodemailer.createTransport({
 	}
 });
 
+
 /* GET home page. */
 //isAuthenticated is a function created to check whether logged in or not
 router.get('/', isAuthenticated, function(req, res, next) {
-  //render the page if logged in
-  res.render('index', {title: 'Express', id: req.session.userid})
+	//render the page if logged in
+	res.render('index', {title: 'Express', id: req.session.userid})
 });
+
 
 router.get('/logout', isAuthenticated, function(req, res, next){
 	//to logout reset success value and redirect to home page
@@ -23,6 +25,7 @@ router.get('/logout', isAuthenticated, function(req, res, next){
 	req.session.destroy();
 	res.redirect('signin');
 });
+
 
 router.get('/signin', function(req, res, next){
 	if (req.session.success){
@@ -33,6 +36,7 @@ router.get('/signin', function(req, res, next){
 		req.session.errors = null;
 	}
 });
+
 
 //when signin request is submitted
 router.post('/submit', async function(req, res, next){
@@ -73,6 +77,7 @@ router.post('/submit', async function(req, res, next){
 	}
 });
 
+
 router.get('/forgot-password', function(req, res, next) {
 	res.render('forgot-password', {errors: req.session.errors });
 	req.session.errors = null;
@@ -80,7 +85,6 @@ router.get('/forgot-password', function(req, res, next) {
 
 
 router.post('/forgot-password-submit', async function(req, res, next) {
-
 	req.check('email_id', 'No email entered').isLength({min: 1}); //this checks the 'email_id' named parameter
 	var errors = req.validationErrors();
 	if(errors){
@@ -88,82 +92,80 @@ router.post('/forgot-password-submit', async function(req, res, next) {
 		res.redirect('forgot-password');
 	}
 	else{
-  //ensure that you have a user with this email
-  var email = req.body.email_id;
-  var sql = "SELECT * from `admin_login` where `email`='"+email+"'";
-  var resLen = 0;
-  await db.query(sql, async function(err, results){
-  	resLen = results.length;
-  	if(results.length==0){
-  			/**
-		   * we don't want to tell attackers that an
-		   * email doesn't exist, because that will let
-		   * them use this form to find ones that do
-		   * exist.
-		   **/
-		   console.log(email);
-		   res.redirect('signin');
-		}
-		else{
-			console.log(email);
-  		//if email exists:
-  /**
-   * Expire any tokens that were previously
-   * set for this user. That prevents old tokens
-   * from being used.
-   **/
-   sql = "UPDATE `reset_password_tokens` SET used=1 where email='"+email+"'";
-   await db.query(sql, async function (err, result, fields) {
-   	if (err){
-   		throw err;
-   		res.redirect('signin');
-   	}
-   	else{
-   		console.log(result);
-   		//Create a random reset token
-    var token = crypto.randomBytes(64).toString('base64');
+		//ensure that you have a user with this email
+		var email = req.body.email_id;
+		var sql = "SELECT * from `admin_login` where `email`='"+email+"'";
+		var resLen = 0;
+		await db.query(sql, async function(err, results){
+			resLen = results.length;
+			if(results.length==0){
+					/**
+			   * we don't want to tell attackers that an
+			   * email doesn't exist, because that will let
+			   * them use this form to find ones that do
+			   * exist.
+			   **/
+			   console.log(email);
+			   res.redirect('signin');
+			}
+			else{
+				console.log(email);
+				//if email exists:
+				/**
+				* Expire any tokens that were previously
+				* set for this user. That prevents old tokens
+				* from being used.
+				**/
+				sql = "UPDATE `reset_password_tokens` SET used=1 where email='"+email+"'";
+				await db.query(sql, async function (err, result, fields) {
+				   	if (err){
+				   		throw err;
+				   		res.redirect('signin');
+				   	}
+				   	else{
+				   		console.log(result);
+				   		//Create a random reset token
+					    var token = crypto.randomBytes(64).toString('base64');
 
-    //token expires after one hour
-    var expireDate = new Date();
-    expireDate.setTime(expireDate.getTime() + (1*60*60*1000));
-    expiry = String(expireDate.getFullYear())+"-"+String(expireDate.getMonth()+1)+"-"+String(expireDate.getDate())+" "+String(expireDate.getHours()) + ":" + String(expireDate.getMinutes()) + ":" + String(expireDate.getSeconds())
-    //insert token data into DB
-    sql = "INSERT INTO `reset_password_tokens` VALUES ('"+email+"', '"+token+"', '"+expiry+"', 0);";
-    await db.query(sql, function (err, result, fields) {
-    	if (err){
-    		throw err;
-    		res.redirect('signin');
-    	}
-    	console.log(result);
-    });
+					    //token expires after one hour
+					    var expireDate = new Date();
+					    expireDate.setTime(expireDate.getTime() + (1*60*60*1000));
+					    expiry = String(expireDate.getFullYear())+"-"+String(expireDate.getMonth()+1)+"-"+String(expireDate.getDate())+" "+String(expireDate.getHours()) + ":" + String(expireDate.getMinutes()) + ":" + String(expireDate.getSeconds())
+					    //insert token data into DB
+					    sql = "INSERT INTO `reset_password_tokens` VALUES ('"+email+"', '"+token+"', '"+expiry+"', 0);";
+					    await db.query(sql, function (err, result, fields) {
+					    	if (err){
+					    		throw err;
+					    		res.redirect('signin');
+					    	}
+					    	console.log(result);
+					    });
 
-  //create email
-  const message = {
-  	from: process.env.SENDER_ADDRESS,
-  	to: email,
-  	replyTo: process.env.REPLYTO_ADDRESS,
-  	subject: process.env.FORGOT_PASS_SUBJECT_LINE,
-  	text: 'To reset your password, please click the link below.\n\nhttp://localhost:8000/reset-password?token='+encodeURIComponent(token)+'&email='+email
-  };
+						//create email
+						const message = {
+							from: process.env.SENDER_ADDRESS,
+							to: email,
+							replyTo: process.env.REPLYTO_ADDRESS,
+							subject: process.env.FORGOT_PASS_SUBJECT_LINE,
+							text: 'To reset your password, please click the link below.\n\nhttp://localhost:8000/reset-password?token='+encodeURIComponent(token)+'&email='+email
+						};
 
-  //send email
-  transport.sendMail(message, function (err, info) {
-  	if(err) { console.log(err); console.log("hhhhh");}
-  	else { console.log(info); console.log("ttttt");}
-  });
+						//send email
+						transport.sendMail(message, function (err, info) {
+							if(err) { console.log(err); console.log("hhhhh");}
+							else { console.log(info); console.log("ttttt");}
+						});
 
-  //return res.json({status: 'ok'});
-  res.redirect('/signin');
-   	}
-   });
+						//return res.json({status: 'ok'});
+						res.redirect('/signin');
+					}
+				});
 
-    
-
-}
-})
-  
-}
+			}
+		})  
+	}
 });
+
 
 router.get('/reset-password', async function(req, res, next) {
 	//delete expired tokens for all email ids: this should be done elsewhere
@@ -203,6 +205,7 @@ router.get('/reset-password', async function(req, res, next) {
 	});
 
 });
+
 
 //new password has been entered
 router.post('/reset-password', async function(req, res, next) {
@@ -245,18 +248,19 @@ router.post('/reset-password', async function(req, res, next) {
 			}
 		}
 	});
-		
 
 });
+
 
 function isAuthenticated(req, res, next) {
 	if (req.session.success)
 		return next();
 
-  // IF A USER ISN'T LOGGED IN, THEN REDIRECT THEM SIGNIN PAGE
-  req.session.errors = null;
-  req.session.success = null;
-  res.redirect('/signin');
+	// IF A USER ISN'T LOGGED IN, THEN REDIRECT THEM SIGNIN PAGE
+	req.session.errors = null;
+	req.session.success = null;
+	res.redirect('/signin');
 }
+
 
 module.exports = router;
