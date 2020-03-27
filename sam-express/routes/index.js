@@ -3,11 +3,11 @@ var router = express.Router();
 var crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const transport = nodemailer.createTransport({
-    service: "Gmail",
-    auth: {
-        user: 'we.at.fsociety@gmail.com',
-        pass: 'wearefsociety'
-    }
+	service: "Gmail",
+	auth: {
+		user: 'we.at.fsociety@gmail.com',
+		pass: 'wearefsociety'
+	}
 });
 
 /* GET home page. */
@@ -30,6 +30,7 @@ router.get('/signin', function(req, res, next){
 	}
 	else{
 		res.render('signin', {errors: req.session.errors});
+		req.session.errors = null;
 	}
 });
 
@@ -67,25 +68,31 @@ router.post('/submit', async function(req, res, next){
 				req.session.errors = errors
 				res.redirect('signin');
 			}
-		})
+		});
 	}
 });
 
 router.get('/forgot-password', function(req, res, next) {
-  res.render('forgot-password', { });
+	res.render('forgot-password', {errors: req.session.errors });
+	req.session.errors = null;
 });
 
 router.post('/forgot-password-submit', async function(req, res, next) {
+
 	req.check('email_id', 'No email entered').isLength({min: 1}); //this checks the 'email_id' named parameter
 	var errors = req.validationErrors();
 	if(errors){
-		console.log("shitt");
+		req.session.errors = errors;
+		res.redirect('forgot-password');
 	}
+	else{
   //ensure that you have a user with this email
   var email = req.body.email_id;
-  var sql = "SELECT * from admin_login where `email`='"+email+"'";
-  await db.query(sql, function(err, results){
-  		if(results.length==0){
+  var sql = "SELECT * from `admin_login` where `email`='"+email+"'";
+  var resLen = 0;
+  await db.query(sql, async function(err, results){
+  	resLen = results.length;
+  	if(results.length==0){
   			/**
 		   * we don't want to tell attackers that an
 		   * email doesn't exist, because that will let
@@ -93,64 +100,147 @@ router.post('/forgot-password-submit', async function(req, res, next) {
 		   * exist.
 		   **/
 		   console.log(email);
-  			res.redirect('signin');
-  			return;
-  		}
-  		else{
-  		console.log(email);}
-  })
+		   res.redirect('signin');
+		}
+		else{
+			console.log(email);
+  		//if email exists:
   /**
    * Expire any tokens that were previously
    * set for this user. That prevents old tokens
    * from being used.
    **/
    sql = "UPDATE `reset_password_tokens` SET used=1 where email='"+email+"'";
-    await db.query(sql, function (err, result, fields) {
-	    if (err){
-		    throw err;
-		    res.redirect('signin');
-	 	}
-	    console.log(result);
-	});
- 
+   await db.query(sql, async function (err, result, fields) {
+   	if (err){
+   		throw err;
+   		res.redirect('signin');
+   	}
+   	else{
+   		console.log(result);
+   	}
+   });
+
     //Create a random reset token
     var token = crypto.randomBytes(64).toString('base64');
- 
+
     //token expires after one hour
     var expireDate = new Date();
     expireDate.setTime(expireDate.getTime() + (1*60*60*1000));
- 	expiry = String(expireDate.getFullYear())+"-"+String(expireDate.getMonth()+1)+"-"+String(expireDate.getDate())+" "+String(expireDate.getHours()) + ":" + String(expireDate.getMinutes()) + ":" + String(expireDate.getSeconds())
+    expiry = String(expireDate.getFullYear())+"-"+String(expireDate.getMonth()+1)+"-"+String(expireDate.getDate())+" "+String(expireDate.getHours()) + ":" + String(expireDate.getMinutes()) + ":" + String(expireDate.getSeconds())
     //insert token data into DB
     sql = "INSERT INTO `reset_password_tokens` VALUES ('"+email+"', '"+token+"', '"+expiry+"', 0);";
-  	await db.query(sql, function (err, result, fields) {
-	    if (err){
-		    throw err;
-		    res.redirect('signin');
-	 	}
-	    console.log(result);
-	});
+    await db.query(sql, function (err, result, fields) {
+    	if (err){
+    		throw err;
+    		res.redirect('signin');
+    	}
+    	console.log(result);
+    });
 
   //create email
   const message = {
-      from: process.env.SENDER_ADDRESS,
-      to: email,
-      replyTo: process.env.REPLYTO_ADDRESS,
-      subject: process.env.FORGOT_PASS_SUBJECT_LINE,
-      text: 'To reset your password, please click the link below.\n\nhttps://'+process.env.DOMAIN+'/user/reset-password?token='+encodeURIComponent(token)+'&email='+email
+  	from: process.env.SENDER_ADDRESS,
+  	to: email,
+  	replyTo: process.env.REPLYTO_ADDRESS,
+  	subject: process.env.FORGOT_PASS_SUBJECT_LINE,
+  	text: 'To reset your password, please click the link below.\n\nhttps://localhost:8000/user/reset-password?token='+encodeURIComponent(token)+'&email='+email
   };
 
   //send email
   transport.sendMail(message, function (err, info) {
-     if(err) { console.log(err); console.log("hhhhh");}
-     else { console.log(info); console.log("ttttt");return;}
+  	if(err) { console.log(err); console.log("hhhhh");}
+  	else { console.log(info); console.log("ttttt");}
   });
 
-  return;
+  //return res.json({status: 'ok'});
+  res.redirect('/signin');
+
+}
+})
+  
+}
+});
+
+router.get('/reset-password', async function(req, res, next) {
+	//delete expired tokens for all email ids: this should be done elsewhere
+	var sql = "DELETE FROM `reset_password_tokens` WHERE expiration<=NOW()";
+	await db.query(sql, function (err, result, fields) {
+		if (err){
+			throw err;
+			res.redirect('signin');
+		}
+		console.log(result);
+	});
+
+	sql = "SELECT * from `reset_password_tokens` WHERE email='"+req.query.email+"' and token='"+req.query.token+"' and used=0 and expiration>=NOW();";
+	await db.query(sql, function (err, result, fields) {
+		if (err){
+			throw err;
+			res.redirect('signin');
+		}
+		else{
+			console.log(result);
+			errors = [];
+			if(result.length==0){
+				errors.push("Token missing or expired or used already, request to reset password again.");
+				req.session.errors = errors;
+				res.redirect('forgot-password');
+			}
+			else{
+				res.render('reset-password-enter', {token: req.query.token, email: req.query.email});
+			}
+		}
+
+	});
+
+});
+
+router.post('/reset-password', async function(req, res, next) {
+	var sql =  "SELECT * from `reset_password_tokens` WHERE email='"+req.body.email_id+"' and token='"+req.body.token+"' and used=0 and expiration>=NOW();";
+	var res = 0;
+	await db.query(sql, function (err, result, fields) {
+		if (err){
+			throw err;
+			res.redirect('signin');
+		}
+		else{
+			if(result.length==0){
+				errors.push("Token missing or expired or used already, request to reset password again.");
+				req.session.errors = errors;
+				res.redirect('forgot-password');
+			}
+			else{
+				res = result.length;
+			}
+		}
+	});
+	if(res>0){
+		sql = "UPDATE `reset_password_tokens` SET used=1 WHERE email='"+req.body.email_id+"' and token='"+req.body.token+"'";
+		await db.query(sql, function (err, result, fields) {
+			if (err){
+				throw err;
+				res.redirect('signin');
+			}
+		});
+	}
+	if(res>0){
+		sql = "UPDATE `admin_login` SET password='"+req.body.pass+"' WHERE email='"+req.body.email_id+"'";
+		await db.query(sql, function (err, result, fields) {
+			if (err){
+				throw err;
+				res.redirect('signin');
+			}
+			else{
+				res.redirect('signin');
+			}
+		});
+	}
 });
 
 function isAuthenticated(req, res, next) {
-  if (req.session.success)
-      return next();
+	if (req.session.success)
+		return next();
 
   // IF A USER ISN'T LOGGED IN, THEN REDIRECT THEM SIGNIN PAGE
   req.session.errors = null;
