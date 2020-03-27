@@ -8,7 +8,7 @@ how to run: go to sam-epress. Type "npm start" in powershell. in browser, type "
 Imp files for modification: app.js, routes/index.js, views/layouts/*
 package.json has list of reuirements of the project
 
-
+Followed forgot password by: https://www.smashingmagazine.com/2020/03/creating-secure-password-flows-nodejs-mysql/
 
 Operating git:
 git pull
@@ -17,12 +17,11 @@ git commit -m "..."
 git push -u origin master
 
 TODO:
-set crypto with salt for passwords
-set crypto.randomBytes(64).toString('base64'); at time of creating token while resetting password.
+set CRYPTO with salt for passwords
 make sure to see all the pages that can open with or without authentication
 make sure to clear the session errors when required(whenever errors are set then reset it at some point by req.session.errors=NULL;)
 delete expired tokens regularly
-see all errors and make sure which ones should be displayed to the user. Also, handle the errors properly.
+see all errors and make sure which ones should be displayed to the user. Also, handle all the ERRORS properly.
 convert the error messages to flash messages
-comment and indent, also correct the names
+comment and INDENT, also correct the names
 check all end-cases

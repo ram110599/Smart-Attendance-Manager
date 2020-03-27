@@ -34,6 +34,7 @@ router.get('/signin', function(req, res, next){
 	}
 });
 
+//when signin request is submitted
 router.post('/submit', async function(req, res, next){
 	//validation
 	req.check('id', 'No ID entered').isLength({min: 1}); //this checks the 'id' named parameter
@@ -76,6 +77,7 @@ router.get('/forgot-password', function(req, res, next) {
 	res.render('forgot-password', {errors: req.session.errors });
 	req.session.errors = null;
 });
+
 
 router.post('/forgot-password-submit', async function(req, res, next) {
 
@@ -174,6 +176,7 @@ router.get('/reset-password', async function(req, res, next) {
 		console.log(result);
 	});
 
+	//verify the token with the token in database and see if it is within expiration period and used=0 for it i.e. this token has not been used before
 	sql = "SELECT * from `reset_password_tokens` WHERE email='"+req.query.email+"' and token='"+req.query.token+"' and used=0 and expiration>=NOW();";
 	await db.query(sql, function (err, result, fields) {
 		if (err){
@@ -183,12 +186,16 @@ router.get('/reset-password', async function(req, res, next) {
 		else{
 			console.log(result);
 			errors = [];
+			//Token missing or expired or used already
 			if(result.length==0){
 				errors.push("Token missing or expired or used already, request to reset password again.");
 				req.session.errors = errors;
 				res.redirect('forgot-password');
 			}
+			//correct token
 			else{
+				//renders a page where new password can be given, passes token as argument bcz token needs to be verified
+				//again at the time of resetting the password otherwise someone may meddle in between and make system insecure.
 				res.render('reset-password-enter', {token: req.query.token, email: req.query.email});
 			}
 		}
@@ -197,7 +204,9 @@ router.get('/reset-password', async function(req, res, next) {
 
 });
 
+//new password has been entered
 router.post('/reset-password', async function(req, res, next) {
+	//check whether the email and token match to the ones in database
 	var sql =  "SELECT * from `reset_password_tokens` WHERE email='"+req.body.email_id+"' and token='"+req.body.token+"' and used=0 and expiration>=NOW();";
 	await db.query(sql, async function (err, result, fields) {
 		if (err){
@@ -212,6 +221,8 @@ router.post('/reset-password', async function(req, res, next) {
 				res.redirect('forgot-password');
 			}
 			else{
+				//update token as used in database, can also delete this token
+				//and then update the password
 				sql = "UPDATE `reset_password_tokens` SET used=1 WHERE email='"+req.body.email_id+"' and token='"+req.body.token+"'";
 				await db.query(sql, async function (err, result, fields) {
 					if (err){
