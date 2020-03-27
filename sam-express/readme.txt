@@ -24,3 +24,5 @@ make sure to clear the session errors when required(whenever errors are set then
 delete expired tokens regularly
 see all errors and make sure which ones should be displayed to the user. Also, handle the errors properly.
 convert the error messages to flash messages
+comment and indent, also correct the names
+check all end-cases

@@ -118,10 +118,7 @@ router.post('/forgot-password-submit', async function(req, res, next) {
    	}
    	else{
    		console.log(result);
-   	}
-   });
-
-    //Create a random reset token
+   		//Create a random reset token
     var token = crypto.randomBytes(64).toString('base64');
 
     //token expires after one hour
@@ -144,7 +141,7 @@ router.post('/forgot-password-submit', async function(req, res, next) {
   	to: email,
   	replyTo: process.env.REPLYTO_ADDRESS,
   	subject: process.env.FORGOT_PASS_SUBJECT_LINE,
-  	text: 'To reset your password, please click the link below.\n\nhttps://localhost:8000/user/reset-password?token='+encodeURIComponent(token)+'&email='+email
+  	text: 'To reset your password, please click the link below.\n\nhttp://localhost:8000/reset-password?token='+encodeURIComponent(token)+'&email='+email
   };
 
   //send email
@@ -155,6 +152,10 @@ router.post('/forgot-password-submit', async function(req, res, next) {
 
   //return res.json({status: 'ok'});
   res.redirect('/signin');
+   	}
+   });
+
+    
 
 }
 })
@@ -198,44 +199,43 @@ router.get('/reset-password', async function(req, res, next) {
 
 router.post('/reset-password', async function(req, res, next) {
 	var sql =  "SELECT * from `reset_password_tokens` WHERE email='"+req.body.email_id+"' and token='"+req.body.token+"' and used=0 and expiration>=NOW();";
-	var res = 0;
-	await db.query(sql, function (err, result, fields) {
+	await db.query(sql, async function (err, result, fields) {
 		if (err){
 			throw err;
 			res.redirect('signin');
 		}
 		else{
 			if(result.length==0){
+				errors = [];
 				errors.push("Token missing or expired or used already, request to reset password again.");
 				req.session.errors = errors;
 				res.redirect('forgot-password');
 			}
 			else{
-				res = result.length;
+				sql = "UPDATE `reset_password_tokens` SET used=1 WHERE email='"+req.body.email_id+"' and token='"+req.body.token+"'";
+				await db.query(sql, async function (err, result, fields) {
+					if (err){
+						throw err;
+						res.redirect('signin');
+					}
+					else{
+						sql = "UPDATE `admin_login` SET password='"+req.body.pass+"' WHERE email='"+req.body.email_id+"'";
+						await db.query(sql, function (err, result, fields) {
+							if (err){
+								throw err;
+								res.redirect('signin');
+							}
+							else{
+								res.redirect('/signin');
+							}
+						});
+					}
+				});
 			}
 		}
 	});
-	if(res>0){
-		sql = "UPDATE `reset_password_tokens` SET used=1 WHERE email='"+req.body.email_id+"' and token='"+req.body.token+"'";
-		await db.query(sql, function (err, result, fields) {
-			if (err){
-				throw err;
-				res.redirect('signin');
-			}
-		});
-	}
-	if(res>0){
-		sql = "UPDATE `admin_login` SET password='"+req.body.pass+"' WHERE email='"+req.body.email_id+"'";
-		await db.query(sql, function (err, result, fields) {
-			if (err){
-				throw err;
-				res.redirect('signin');
-			}
-			else{
-				res.redirect('signin');
-			}
-		});
-	}
+		
+
 });
 
 function isAuthenticated(req, res, next) {
