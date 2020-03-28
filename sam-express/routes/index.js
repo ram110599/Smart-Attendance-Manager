@@ -40,40 +40,45 @@ router.get('/signin', function(req, res, next){
 
 //when signin request is submitted
 router.post('/submit', async function(req, res, next){
-	//validation
-	req.check('id', 'No ID entered').isLength({min: 1}); //this checks the 'id' named parameter
-	req.check('password', 'No password entered').isLength({min: 1});
-	var errors = req.validationErrors();
-	//if errors exist then not validated. hence, sent back to login page
-	if (errors){
-		req.session.errors = errors;
-		req.session.success = false;
-		res.redirect('signin');
+	if(req.session.success){
+		res.redirect('/');
 	}
 	else{
-		//verification after validation
-		var id = req.body.id;
-		var password = req.body.password;
-		var sql = "SELECT * from admin_login where `id`='"+id+"' and `password`='"+password+"'";
-		await db.query(sql, function(err, results){
-			//correct userid and password
-			if(results.length){
-				req.session.userid = results[0].id;
-				req.session.success = true;
-				res.redirect('/');
-			}
-			//incorrect userid or password
-			else{
-				req.session.success = false;
-				var error = {param: "id", msg: "Invalid user id or password", value: req.body.id};
-				if(!errors){
-					errors = [];
+		//validation
+		req.check('id', 'No ID entered').isLength({min: 1}); //this checks the 'id' named parameter
+		req.check('password', 'No password entered').isLength({min: 1});
+		var errors = req.validationErrors();
+		//if errors exist then not validated. hence, sent back to login page
+		if (errors){
+			req.session.errors = errors;
+			req.session.success = false;
+			res.redirect('signin');
+		}
+		else{
+			//verification after validation
+			var id = req.body.id;
+			var password = req.body.password;
+			var sql = "SELECT * from admin_login where `id`='"+id+"' and `password`='"+password+"'";
+			await db.query(sql, function(err, results){
+				//correct userid and password
+				if(results.length){
+					req.session.userid = results[0].id;
+					req.session.success = true;
+					res.redirect('/');
 				}
-				errors.push(error);
-				req.session.errors = errors
-				res.redirect('signin');
-			}
-		});
+				//incorrect userid or password
+				else{
+					req.session.success = false;
+					var error = {param: "id", msg: "Invalid user id or password", value: req.body.id};
+					if(!errors){
+						errors = [];
+					}
+					errors.push(error);
+					req.session.errors = errors
+					res.redirect('signin');
+				}
+			});
+		}
 	}
 });
 
@@ -173,7 +178,6 @@ router.get('/reset-password', async function(req, res, next) {
 	await db.query(sql, function (err, result, fields) {
 		if (err){
 			throw err;
-			res.redirect('signin');
 		}
 		console.log(result);
 	});
@@ -190,7 +194,7 @@ router.get('/reset-password', async function(req, res, next) {
 			errors = [];
 			//Token missing or expired or used already
 			if(result.length==0){
-				errors.push("Token missing or expired or used already, request to reset password again.");
+				errors.push({msg: "Token missing or expired or used already, request to reset password again."});
 				req.session.errors = errors;
 				res.redirect('forgot-password');
 			}

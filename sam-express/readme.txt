@@ -21,7 +21,8 @@ set CRYPTO with salt for passwords
 make sure to see all the pages that can open with or without authentication
 make sure to clear the session errors when required(whenever errors are set then reset it at some point by req.session.errors=NULL;)
 delete expired tokens regularly
-see all errors and make sure which ones should be displayed to the user. Also, handle all the ERRORS properly.
+see all errors and make sure which ones should be displayed to the user. Also, handle all the errors properly.
 convert the error messages to flash messages
-comment and INDENT, also correct the NAMES(use _ instead of -; Start class name in capital and proper camelCase)
-check all END-CASES
+comment and indent, also correct the NAMES(use _ instead of -; Start class name in capital and proper camelCase)
+check all end cases
+make proper file structure. example- the login stuff(all the login pages) should be in one folder. Similarly, index.js can also be segmented.
