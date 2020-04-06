@@ -58,7 +58,7 @@ router.post('/submit', async function(req, res, next){
 			//verification after validation
 			var id = req.body.id;
 			var password = req.body.password;
-			var sql = "SELECT * from admin_login where `id`='"+id+"' and `password`='"+password+"'";
+			var sql = "SELECT * from admin_login where `admin_id`='"+id+"' and `password`='"+password+"'";
 			await db.query(sql, function(err, results){
 				//correct userid and password
 				if(results.length){
@@ -99,7 +99,7 @@ router.post('/forgot-password-submit', async function(req, res, next) {
 	else{
 		//ensure that you have a user with this email
 		var email = req.body.email_id;
-		var sql = "SELECT * from `admin_login` where `email`='"+email+"'";
+		var sql = "SELECT * from `admin` where `email`='"+email+"'";
 		var resLen = 0;
 		await db.query(sql, async function(err, results){
 			resLen = results.length;
@@ -237,7 +237,8 @@ router.post('/reset-password', async function(req, res, next) {
 						res.redirect('signin');
 					}
 					else{
-						sql = "UPDATE `admin_login` SET password='"+req.body.pass+"' WHERE email='"+req.body.email_id+"'";
+						sql = "update admin_login inner join admin on admin.admin_id = admin_login.admin_id set admin_login.password = '"+req.body.pass+"' where admin.email = '"+req.body.email_id+"';"
+						//sql = "UPDATE `admin_login` SET password='"+req.body.pass+"' WHERE email='"+req.body.email_id+"'";
 						await db.query(sql, function (err, result, fields) {
 							if (err){
 								throw err;
