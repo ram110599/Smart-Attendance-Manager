@@ -1,0 +1,29 @@
+{{# if errors }}
+	<section class="errors">
+		<ul>
+			{{# each errors }}
+				<li>{{ this.msg }}</li>
+			{{/each}}
+		</ul>
+	</section>
+{{/if}}
+
+<form action="/add_ta_submit" method="post">
+	<div class="input">
+		<label for="ta_id">TA ID</label>
+		<input type="text" id="ta_id" name="ta_id" required>
+	</div>
+	<div class="input">
+		<label for="student_id">student ID(Only if TA is also student)</label>
+		<input type="text" id="student_id" name="student_id">
+	</div>
+	<div class="input">
+		<label for="ta_email">email ID</label>
+		<input type="email" id="ta_email" name="ta_email" required>
+	</div>
+	
+	<button type="submit">Submit</button>
+</form>
+<form action="/" method="get">
+	<button type="submit">Home</button>
+</form>

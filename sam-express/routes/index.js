@@ -62,7 +62,7 @@ router.post('/submit', async function(req, res, next){
 			await db.query(sql, function(err, results){
 				//correct userid and password
 				if(results.length){
-					req.session.userid = results[0].id;
+					req.session.userid = results[0].admin_id;
 					req.session.success = true;
 					res.redirect('/');
 				}
@@ -124,7 +124,7 @@ router.post('/forgot-password-submit', async function(req, res, next) {
 				sql = "UPDATE `reset_password_tokens` SET used=1 where email='"+email+"'";
 				await db.query(sql, async function (err, result, fields) {
 				   	if (err){
-				   		throw err;
+				   		console.log(err);
 				   		res.redirect('signin');
 				   	}
 				   	else{
@@ -140,7 +140,7 @@ router.post('/forgot-password-submit', async function(req, res, next) {
 					    sql = "INSERT INTO `reset_password_tokens` VALUES ('"+email+"', '"+token+"', '"+expiry+"', 0);";
 					    await db.query(sql, function (err, result, fields) {
 					    	if (err){
-					    		throw err;
+					    		console.log(err);
 					    		res.redirect('signin');
 					    	}
 					    	console.log(result);
@@ -177,7 +177,7 @@ router.get('/reset-password', async function(req, res, next) {
 	var sql = "DELETE FROM `reset_password_tokens` WHERE expiration<=NOW()";
 	await db.query(sql, function (err, result, fields) {
 		if (err){
-			throw err;
+			console.log(err);
 		}
 		console.log(result);
 	});
@@ -186,7 +186,7 @@ router.get('/reset-password', async function(req, res, next) {
 	sql = "SELECT * from `reset_password_tokens` WHERE email='"+req.query.email+"' and token='"+req.query.token+"' and used=0 and expiration>=NOW();";
 	await db.query(sql, function (err, result, fields) {
 		if (err){
-			throw err;
+			console.log(err);
 			res.redirect('signin');
 		}
 		else{
@@ -217,7 +217,7 @@ router.post('/reset-password', async function(req, res, next) {
 	var sql =  "SELECT * from `reset_password_tokens` WHERE email='"+req.body.email_id+"' and token='"+req.body.token+"' and used=0 and expiration>=NOW();";
 	await db.query(sql, async function (err, result, fields) {
 		if (err){
-			throw err;
+			console.log(err);
 			res.redirect('signin');
 		}
 		else{
@@ -233,7 +233,7 @@ router.post('/reset-password', async function(req, res, next) {
 				sql = "UPDATE `reset_password_tokens` SET used=1 WHERE email='"+req.body.email_id+"' and token='"+req.body.token+"'";
 				await db.query(sql, async function (err, result, fields) {
 					if (err){
-						throw err;
+						console.log(err);
 						res.redirect('signin');
 					}
 					else{
@@ -241,7 +241,7 @@ router.post('/reset-password', async function(req, res, next) {
 						//sql = "UPDATE `admin_login` SET password='"+req.body.pass+"' WHERE email='"+req.body.email_id+"'";
 						await db.query(sql, function (err, result, fields) {
 							if (err){
-								throw err;
+								console.log(err);
 								res.redirect('signin');
 							}
 							else{
@@ -255,6 +255,394 @@ router.post('/reset-password', async function(req, res, next) {
 	});
 
 });
+
+//admin wants to add new student
+router.get('/add_student_redirect', isAuthenticated, async function(req, res, next) {
+	res.render('add_student', {errors: req.session.errors});
+	req.session.errors = null;
+});
+
+router.post('/add_student_submit', isAuthenticated, async function(req, res, next) {
+	req.check('student_id', 'No ID entered').isLength({min: 1}); //this checks the 'id' named parameter
+	req.check('student_name', 'No name entered').isLength({min: 1});
+	req.check('student_email', 'No email entered').isLength({min: 1});
+	var errors = req.validationErrors();     //catches all the validation errors
+	//if errors exist then not validated. hence, sent back to add student page
+	if (errors){
+		req.session.errors = errors;
+		res.redirect('add_student_redirect');
+	}
+	else{
+		//add the student in the database
+		sql = "INSERT INTO `student`(`student_id`, `name`, `email`) VALUES ('"+req.body.student_id+"','"+req.body.student_name+"','"+req.body.student_email+"')";
+		await db.query(sql, async function (err, result, fields) {
+			if (err){
+				//writes error to the consle
+				console.log(err);
+				errors = [];
+				//the errors are from database side like repeat of primary or unique key/error in connection, etc
+				errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+				req.session.errors = errors;
+				res.redirect('add_student_redirect');
+			}
+			else{
+				errors = [];
+				//not error, rather its a message to be displayed
+				errors.push({msg: "Successfully entered"});
+				req.session.errors = errors;
+				res.redirect("add_student_redirect");
+			}
+		});
+	}
+});
+
+
+//admin wants to add new instructor
+router.get('/add_instructor_redirect', isAuthenticated, async function(req, res, next) {
+	res.render('add_instructor', {errors: req.session.errors});
+	req.session.errors = null;
+});
+
+router.post('/add_instructor_submit', isAuthenticated, async function(req, res, next) {
+	req.check('instructor_id', 'No ID entered').isLength({min: 1}); //this checks the 'id' named parameter
+	req.check('instructor_name', 'No name entered').isLength({min: 1});
+	req.check('instructor_email', 'No email entered').isLength({min: 1});
+	var errors = req.validationErrors();     //catches all the validation errors
+	//if errors exist then not validated. hence, sent back to add instructor page
+	if (errors){
+		req.session.errors = errors;
+		res.redirect('add_instructor_redirect');
+	}
+	else{
+		//add the instructor in the database
+		sql = "INSERT INTO `instructor`(`instructor_id`, `name`, `email`) VALUES ('"+req.body.instructor_id+"','"+req.body.instructor_name+"','"+req.body.instructor_email+"')";
+		await db.query(sql, async function (err, result, fields) {
+			if (err){
+				//writes error to the consle
+				console.log(err);
+				errors = [];
+				//the errors are from database side like repeat of primary or unique key/error in connection, etc
+				errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+				req.session.errors = errors;
+				res.redirect('add_instructor_redirect');
+			}
+			else{
+				errors = [];
+				//not error, rather its a message to be displayed
+				errors.push({msg: "Successfully entered"});
+				req.session.errors = errors;
+				res.redirect("add_instructor_redirect");
+			}
+		});
+	}
+});
+
+
+//admin wants to add new ta
+router.get('/add_ta_redirect', isAuthenticated, async function(req, res, next) {
+	res.render('add_ta', {errors: req.session.errors});
+	req.session.errors = null;
+});
+
+router.post('/add_ta_submit', isAuthenticated, async function(req, res, next) {
+	req.check('ta_id', 'No ID entered').isLength({min: 1}); //this checks the 'id' named parameter
+	req.check('ta_email', 'No email entered').isLength({min: 1});
+	var errors = req.validationErrors();     //catches all the validation errors
+	//if errors exist then not validated. hence, sent back to add ta page
+	if (errors){
+		req.session.errors = errors;
+		res.redirect('add_ta_redirect');
+	}
+	else{
+		//if student id has been entered
+		if(req.body.student_id){
+			//check whether student exists
+			sql = "SELECT * from student where student_id='"+req.body.student_id+"';";
+			await db.query(sql, async function (err, result, fields) {
+				if (err){
+					//writes error to the consle
+					console.log(err);
+					errors = [];
+					//the errors are from database side like repeat of primary or unique key/error in connection, etc
+					errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+					req.session.errors = errors;
+					res.redirect('add_ta_redirect');
+				}
+				else{
+					errors = [];
+					//student exists or not
+					if(result.length==0){
+						errors.push({msg: "No such student_id exist"});	
+						req.session.errors = errors;
+						res.redirect("add_ta_redirect");
+					}
+					else{
+						//check if email id of student and given email id of ta match
+						if(result[0].email==req.body.ta_email){
+							//add the ta in the database
+							sql = "INSERT INTO `ta_record`(`ta_id`, `student_id`, `email`) VALUES ('"+req.body.ta_id+"','"+req.body.student_id+"','"+req.body.ta_email+"')";
+							await db.query(sql, async function (err, result, fields) {
+								if (err){
+									//writes error to the consle
+									console.log(err);
+									errors = [];
+									//the errors are from database side like repeat of primary or unique key/error in connection, etc
+									errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+									req.session.errors = errors;
+									res.redirect('add_ta_redirect');
+								}
+								else{
+									errors = [];
+									//not error, rather its a message to be displayed
+									errors.push({msg: "Successfully entered"});
+									req.session.errors = errors;
+									res.redirect("add_ta_redirect");
+								}
+							});
+						}
+						else{
+							errors.push({msg: "The email from student record of this student_id doesn't match with given email"})							
+							req.session.errors = errors;
+							res.redirect("add_ta_redirect");
+						}
+					}
+				}
+			});
+		}
+		else{
+			//add the ta in the database
+			sql = "INSERT INTO `ta_record`(`ta_id`, `email`) VALUES ('"+req.body.ta_id+"','"+req.body.ta_email+"')";
+			await db.query(sql, async function (err, result, fields) {
+				if (err){
+					//writes error to the consle
+					console.log(err);
+					errors = [];
+					//the errors are from database side like repeat of primary or unique key/error in connection, etc
+					errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+					req.session.errors = errors;
+					res.redirect('add_ta_redirect');
+				}
+				else{
+					errors = [];
+					//not error, rather its a message to be displayed
+					errors.push({msg: "Successfully entered"});
+					req.session.errors = errors;
+					res.redirect("add_ta_redirect");
+				}
+			});
+		}
+	}
+});
+
+
+//admin wants to add new course
+router.get('/add_course_redirect', isAuthenticated, async function(req, res, next) {
+	res.render('add_course', {errors: req.session.errors});
+	req.session.errors = null;
+});
+
+router.post('/add_course_submit', isAuthenticated, async function(req, res, next) {
+	req.check('course_id', 'No ID entered').isLength({min: 1}); //this checks the 'id' named parameter
+	req.check('course_name', 'No name entered').isLength({min: 1});
+	var errors = req.validationErrors();     //catches all the validation errors
+	//if errors exist then not validated. hence, sent back to add course page
+	if (errors){
+		req.session.errors = errors;
+		res.redirect('add_course_redirect');
+	}
+	else{
+		//add the course in the database
+		sql = "INSERT INTO `course`(`course_id`, `course_name`) VALUES ('"+req.body.course_id+"','"+req.body.course_name+"')";
+		await db.query(sql, async function (err, result, fields) {
+			if (err){
+				//writes error to the consle
+				console.log(err);
+				errors = [];
+				//the errors are from database side like repeat of primary or unique key/error in connection, etc
+				errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+				req.session.errors = errors;
+				res.redirect('add_course_redirect');
+			}
+			else{
+				errors = [];
+				//not error, rather its a message to be displayed
+				errors.push({msg: "Successfully entered"});
+				req.session.errors = errors;
+				res.redirect("add_course_redirect");
+			}
+		});
+	}
+});
+
+
+//admin wants to add new class
+router.get('/add_class_redirect', isAuthenticated, async function(req, res, next) {
+	res.render('add_class', {errors: req.session.errors});
+	req.session.errors = null;
+});
+
+router.post('/add_class_submit', isAuthenticated, async function(req, res, next) {
+	req.check('class_id', 'No class ID entered').isLength({min: 1}); //this checks the 'id' named parameter
+	req.check('course_id', 'No course ID entered').isLength({min: 1});
+	req.check('semester', 'No semester entered').isLength({min: 1});
+	req.check('year', 'No year entered').isLength({min: 1});
+	var errors = req.validationErrors();     //catches all the validation errors
+	//if errors exist then not validated. hence, sent back to add class page
+	if (errors){
+		req.session.errors = errors;
+		res.redirect('add_class_redirect');
+	}
+	else if (req.body.semester!='1' && req.body.semester!='2'){
+		errors = [];
+		errors.push({msg: "semester can be only 1 or 2"});
+		req.session.errors = errors;
+		res.redirect('add_class_redirect');
+	}
+	else{
+		//add the class in the database
+		sql = "INSERT INTO `class_info`(`class_info_id`, `course_id`, `semester`,`year`) VALUES ('"+req.body.class_id+"','"+req.body.course_id+"','"+req.body.semester+"','"+req.body.year+"')";
+		await db.query(sql, async function (err, result, fields) {
+			if (err){
+				//writes error to the consle
+				console.log(err);
+				errors = [];
+				//the errors are from database side like repeat of primary or unique key/error in connection, etc
+				errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+				req.session.errors = errors;
+				res.redirect('add_class_redirect');
+			}
+			else{
+				errors = [];
+				//not error, rather its a message to be displayed
+				errors.push({msg: "Successfully entered"});
+				req.session.errors = errors;
+				res.redirect("add_class_redirect");
+			}
+		});
+	}
+});
+
+
+//admin wants to add student to class
+router.get('/add_class_student_redirect', isAuthenticated, async function(req, res, next) {
+	res.render('add_class_student', {errors: req.session.errors});
+	req.session.errors = null;
+});
+
+router.post('/add_class_student_submit', isAuthenticated, async function(req, res, next) {
+	req.check('class_id', 'No class ID entered').isLength({min: 1}); //this checks the 'id' named parameter
+	req.check('student_id', 'No student ID entered').isLength({min: 1});
+	var errors = req.validationErrors();     //catches all the validation errors
+	//if errors exist then not validated. hence, sent back to add class page
+	if (errors){
+		req.session.errors = errors;
+		res.redirect('add_class_student_redirect');
+	}
+	else{
+		//add the student to class in the database
+		sql = "INSERT INTO `enrollment_record`(`class_info_id`, `student_id`) VALUES ('"+req.body.class_id+"','"+req.body.student_id+"')";
+		await db.query(sql, async function (err, result, fields) {
+			if (err){
+				//writes error to the consle
+				console.log(err);
+				errors = [];
+				//the errors are from database side like repeat of primary or unique key/error in connection, etc
+				errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+				req.session.errors = errors;
+				res.redirect('add_class_student_redirect');
+			}
+			else{
+				errors = [];
+				//not error, rather its a message to be displayed
+				errors.push({msg: "Successfully entered"});
+				req.session.errors = errors;
+				res.redirect("add_class_student_redirect");
+			}
+		});
+	}
+});
+
+
+//admin wants to add ta to class
+router.get('/add_class_ta_redirect', isAuthenticated, async function(req, res, next) {
+	res.render('add_class_ta', {errors: req.session.errors});
+	req.session.errors = null;
+});
+
+router.post('/add_class_ta_submit', isAuthenticated, async function(req, res, next) {
+	req.check('class_id', 'No class ID entered').isLength({min: 1}); //this checks the 'id' named parameter
+	req.check('ta_id', 'No ta ID entered').isLength({min: 1});
+	var errors = req.validationErrors();     //catches all the validation errors
+	//if errors exist then not validated. hence, sent back to add class page
+	if (errors){
+		req.session.errors = errors;
+		res.redirect('add_class_ta_redirect');
+	}
+	else{
+		//add the ta to class in the database
+		sql = "INSERT INTO `class_ta`(`class_info_id`, `ta_id`) VALUES ('"+req.body.class_id+"','"+req.body.ta_id+"')";
+		await db.query(sql, async function (err, result, fields) {
+			if (err){
+				//writes error to the consle
+				console.log(err);
+				errors = [];
+				//the errors are from database side like repeat of primary or unique key/error in connection, etc
+				errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+				req.session.errors = errors;
+				res.redirect('add_class_ta_redirect');
+			}
+			else{
+				errors = [];
+				//not error, rather its a message to be displayed
+				errors.push({msg: "Successfully entered"});
+				req.session.errors = errors;
+				res.redirect("add_class_ta_redirect");
+			}
+		});
+	}
+});
+
+
+//admin wants to add instructor to class
+router.get('/add_class_instructor_redirect', isAuthenticated, async function(req, res, next) {
+	res.render('add_class_instructor', {errors: req.session.errors});
+	req.session.errors = null;
+});
+
+router.post('/add_class_instructor_submit', isAuthenticated, async function(req, res, next) {
+	req.check('class_id', 'No class ID entered').isLength({min: 1}); //this checks the 'id' named parameter
+	req.check('instructor_id', 'No instructor ID entered').isLength({min: 1});
+	var errors = req.validationErrors();     //catches all the validation errors
+	//if errors exist then not validated. hence, sent back to add class page
+	if (errors){
+		req.session.errors = errors;
+		res.redirect('add_class_instructor_redirect');
+	}
+	else{
+		//add the instructor to class in the database
+		sql = "INSERT INTO `class_instructor`(`class_info_id`, `instructor_id`) VALUES ('"+req.body.class_id+"','"+req.body.instructor_id+"')";
+		await db.query(sql, async function (err, result, fields) {
+			if (err){
+				//writes error to the consle
+				console.log(err);
+				errors = [];
+				//the errors are from database side like repeat of primary or unique key/error in connection, etc
+				errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+				req.session.errors = errors;
+				res.redirect('add_class_instructor_redirect');
+			}
+			else{
+				errors = [];
+				//not error, rather its a message to be displayed
+				errors.push({msg: "Successfully entered"});
+				req.session.errors = errors;
+				res.redirect("add_class_instructor_redirect");
+			}
+		});
+	}
+});
+
+
 
 
 function isAuthenticated(req, res, next) {
