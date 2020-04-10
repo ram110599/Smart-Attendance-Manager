@@ -26,7 +26,7 @@ convert the error messages to flash messages
 comment and indent, also correct the NAMES(use _ instead of -; Start class name in capital and proper camelCase)
 check all end cases
 make proper file structure. example- the login stuff(all the login pages) should be in one folder. Similarly, index.js can also be segmented.
-add all foreign key and primary key and unique errors.
+add all foreign key and primary key and unique key errors.
 
 Change names- signin's submit to signin_submit, - to _
 add the functionality if teacher wants to cancel the class-- do this by if photo has been uploaded fr a day only then consider class taken and only then add in the attendance table

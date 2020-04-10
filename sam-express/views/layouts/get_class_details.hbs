@@ -1,0 +1,11 @@
+<section class="classes">
+	<ul>
+		{{# each classes }}
+			<li><a href="http://localhost:8000/get_particular_class_details?class_info_id={{this.msg}}">{{ this.msg }}</a></li>
+		{{/each}}
+	</ul>
+</section>
+
+<form action="/" method="get">
+	<button type="submit">Home</button>
+</form>

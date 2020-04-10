@@ -15,7 +15,7 @@ const transport = nodemailer.createTransport({
 //isAuthenticated is a function created to check whether logged in or not
 router.get('/', isAuthenticated, function(req, res, next) {
 	//render the page if logged in
-	res.render('index', {title: 'Express', id: req.session.userid})
+	res.render('index', {id: req.session.userid})
 });
 
 
@@ -643,6 +643,103 @@ router.post('/add_class_instructor_submit', isAuthenticated, async function(req,
 });
 
 
+//admin wants to see class details
+router.get('/get_class_details_redirect', isAuthenticated, async function(req, res, next) {
+	class_list = [];
+	sql = "SELECT * from class_info";
+	await db.query(sql, async function (err, result, fields) {
+		if (err){
+			//writes error to the consle
+			console.log(err);
+			errors = [];
+			//the errors are from database side like repeat of primary or unique key/error in connection, etc
+			errors.push({msg: "Could not access database, error occured: "+err.sqlMessage});
+			req.session.errors = errors;
+			res.redirect('index');
+		}
+		else{
+			for (var i = 0; i < result.length; i++) {
+				class_list.push({msg: result[i].class_info_id});
+			}
+			res.render('get_class_details', {classes: class_list});
+		}
+	});
+});
+
+router.get('/get_particular_class_details', isAuthenticated, async function(req, res, next) {
+	class_info_id = req.query.class_info_id;
+	students = [];
+	instructors = [];
+	tas = [];
+	course = "";
+	sql = "SELECT * from enrollment_record where class_info_id='"+class_info_id+"';";
+	await db.query(sql, async function (err, result, fields) {
+		if (err){
+			//writes error to the consle
+			console.log(err);
+			errors = [];
+			//the errors are from database side like repeat of primary or unique key/error in connection, etc
+			errors.push({msg: "Could not access database, error occured: "+err.sqlMessage});
+			req.session.errors = errors;
+			res.redirect('get_class_details_redirect');
+		}
+		else{
+			for (var i = 0; i < result.length; i++) {
+				students.push({msg: result[i].student_id});
+			}
+			sql = "SELECT * from class_instructor where class_info_id='"+class_info_id+"';";
+			await db.query(sql, async function (err, result, fields) {
+			if (err){
+				//writes error to the consle
+				console.log(err);
+				errors = [];
+				//the errors are from database side like repeat of primary or unique key/error in connection, etc
+				errors.push({msg: "Could not access database, error occured: "+err.sqlMessage});
+				req.session.errors = errors;
+				res.redirect('get_class_details_redirect');
+			}
+			else{
+				for (var i = 0; i < result.length; i++) {
+					instructors.push({msg: result[i].instructor_id});
+				}
+				sql = "SELECT * from class_ta where class_info_id='"+class_info_id+"';";
+				await db.query(sql, async function (err, result, fields) {
+				if (err){
+					//writes error to the consle
+					console.log(err);
+					errors = [];
+					//the errors are from database side like repeat of primary or unique key/error in connection, etc
+					errors.push({msg: "Could not access database, error occured: "+err.sqlMessage});
+					req.session.errors = errors;
+					res.redirect('get_class_details_redirect');
+				}
+				else{
+					for (var i = 0; i < result.length; i++) {
+						tas.push({msg: result[i].ta_id});
+					}
+					sql = "SELECT * from class_info where class_info_id='"+class_info_id+"';";
+					await db.query(sql, async function (err, result, fields) {
+					if (err){
+						//writes error to the consle
+						console.log(err);
+						errors = [];
+						//the errors are from database side like repeat of primary or unique key/error in connection, etc
+						errors.push({msg: "Could not access database, error occured: "+err.sqlMessage});
+						req.session.errors = errors;
+						res.redirect('get_class_details_redirect');
+					}
+					else{
+						course = result[0].course_id;
+						res.render("particular_class_details", {students:students, instructors:instructors, tas:tas, course:course, class:class_info_id});
+					}
+				});
+				}
+			});
+			}
+		});
+		}
+	});
+});
 
 
 function isAuthenticated(req, res, next) {

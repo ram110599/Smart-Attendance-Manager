@@ -1,0 +1,31 @@
+<h1>Class: {{class}}</h1>
+<h3>Course: {{course}}</h3>
+<section class="instructors">
+	<h3>Instructors</h3>
+	<ul>
+		{{# each instructors }}
+			<li>{{ this.msg }}</li>
+		{{/each}}
+	</ul>
+</section>
+<section class="tas">
+	<h3>TAs</h3>
+	<ul>
+		{{# each tas }}
+			<li>{{ this.msg }}</li>
+		{{/each}}
+	</ul>
+</section>
+<section class="students">
+	<h3>Students</h3>
+	<ul>
+		{{# each students }}
+			<li>{{ this.msg }}</li>
+		{{/each}}
+	</ul>
+</section>
+
+
+<form action="get_class_details_redirect" method="get">
+	<button type="submit">Back</button>
+</form>

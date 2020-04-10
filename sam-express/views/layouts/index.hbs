@@ -1,6 +1,6 @@
-<h1>{{ title }}</h1>
+<h1>SMART ATTENDANCE MANAGEMENT</h1>
 	<section class="success">
-		<h2>Successfully logged in by {{id}}</h2>
+		<h2>Welcome {{id}}</h2>
 	</section>
 	<form action="/add_student_redirect" method="get">
       <button type="submit">Add new student</button>
@@ -25,6 +25,9 @@
     </form>
     <form action="/add_class_instructor_redirect" method="get">
       <button type="submit">Add instructor to class</button>
+    </form>
+    <form action="/get_class_details_redirect" method="get">
+      <button type="submit">Get class details</button>
     </form>
 	<form action="/logout" method="get">
       <button type="submit">Log Out</button>
