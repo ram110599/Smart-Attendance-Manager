@@ -194,7 +194,7 @@ CREATE TABLE `reset_password_tokens` (
 
 CREATE TABLE `student` (
   `student_id` varchar(50) NOT NULL,
-  `valid_upto` date NOT NULL,
+  `joining_date` date NOT NULL,
   `gender` varchar(10) NOT NULL,
   `name` varchar(70) NOT NULL,
   `dob` date NOT NULL,
