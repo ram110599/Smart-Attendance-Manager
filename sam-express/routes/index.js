@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var crypto = require('crypto');
+var jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer');
 const transport = nodemailer.createTransport({
 	service: "Gmail",
@@ -9,6 +10,56 @@ const transport = nodemailer.createTransport({
 		pass: 'wearefsociety'
 	}
 });
+
+
+router.post('/api/login', async function(req, res, next) {
+	const username = req.body.username
+	const password = req.body.password
+	var sql = "SELECT * from student_login where `student_id`='"+username+"' and `password`='"+password+"'";
+	await db.query(sql, async function(err, results){
+		//correct userid and password
+		if(results.length){
+
+			var sql = "SELECT * from student where `student_id`='"+username+"'";
+			await db.query(sql, async function(err, results){
+				const name = results[0].name
+				const user = { name: username }
+				const accessToken = jwt.sign(user, 'this-is-a-secret')
+				res.json({ authToken: accessToken, name: name})
+			});
+		}
+		//incorrect userid or password
+		else{
+			res.sendStatus(403)
+		}
+	});
+});
+
+
+router.get('/api/posts', authenticateToken, (req, res) => {
+	res.json({ "message": "congrats sahil"})
+});
+
+
+function authenticateToken(req, res, next){
+	const authHeader = req.headers['authorization']
+	const token = authHeader && authHeader.split(' ')[1]
+	if (token==null) return res.sendStatus(401)
+
+	jwt.verify(token, 'this-is-a-secret', (err, user) => {
+		if (err) return res.sendStatus(403)
+		req.user = user
+		next()
+	})
+};
+
+router.get('/api/login/t/123', function(req, res, next) {
+	res.json({ 
+    	"message": "true"
+  	});
+});
+
+
 
 
 /* GET home page. */
