@@ -26,7 +26,6 @@ import static android.R.attr.password;
 public class MainActivity extends AppCompatActivity {
 
     TextView txtUsername;
-    Button btnLogout;
     SharedPreferences sp;
     UserService userService;
 
@@ -36,7 +35,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         userService = ApiUtils.getUserService();
-        btnLogout = (Button) findViewById(R.id.btnLogout);
         sp = getSharedPreferences("login",MODE_PRIVATE);
         //sp.edit().putBoolean("logged",false).apply();
         //sp.edit().putString("authToken","").apply();
@@ -46,6 +44,19 @@ public class MainActivity extends AppCompatActivity {
         }
         else {
             txtUsername = (TextView) findViewById(R.id.txtUsername);
+            String loginAs = sp.getString("loginAs", "");
+            if (loginAs.equals("Student")){
+                goToStudentMainActivity();
+            }
+            else if (loginAs.equals("Instructor")){
+                goToInstructorMainActivity();
+            }
+            else if (loginAs.equals("TA")){
+                goToTAMainActivity();
+            }
+            else{
+                goToLoginActivity();
+            }
 
             //sample run of how to call apis
             /*Call call = userService.posts("Bearer "+token);
@@ -71,26 +82,35 @@ public class MainActivity extends AppCompatActivity {
             });
             */
 
-            Bundle extras = getIntent().getExtras();
+            /*Bundle extras = getIntent().getExtras();
             String username;
 
             if (extras != null) {
                 username = extras.getString("username");
                 txtUsername.setText("Welcome " + username);
-            }
+            }*/
+
         }
 
-        btnLogout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                sp.edit().putString("authToken","").apply();
-                goToLoginActivity();
-            }
-        });
     }
 
     public void goToLoginActivity(){
         Intent i = new Intent(MainActivity.this,LoginActivity.class);
+        startActivity(i);
+    }
+
+    public void goToStudentMainActivity(){
+        Intent i = new Intent(MainActivity.this,StudentMainActivity.class);
+        startActivity(i);
+    }
+
+    public void goToInstructorMainActivity(){
+        Intent i = new Intent(MainActivity.this,InstructorMainActivity.class);
+        startActivity(i);
+    }
+
+    public void goToTAMainActivity(){
+        Intent i = new Intent(MainActivity.this,TAMainActivity.class);
         startActivity(i);
     }
 }

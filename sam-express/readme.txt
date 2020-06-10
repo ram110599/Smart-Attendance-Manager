@@ -17,6 +17,7 @@ git commit -m "..."
 git push -u origin master
 
 TODO:
+remove ta_id and use his student id instead
 set CRYPTO with salt for passwords
 make sure to see all the pages that can open with or without authentication
 make sure to clear the session errors when required(whenever errors are set then reset it at some point by req.session.errors=NULL;)

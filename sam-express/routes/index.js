@@ -15,24 +15,44 @@ const transport = nodemailer.createTransport({
 router.post('/api/login', async function(req, res, next) {
 	const username = req.body.username
 	const password = req.body.password
-	var sql = "SELECT * from student_login where `student_id`='"+username+"' and `password`='"+password+"'";
-	await db.query(sql, async function(err, results){
-		//correct userid and password
-		if(results.length){
+	const loginAs = req.body.loginAs
+	isCorrectDesignation = 1
+	console.log(loginAs)
+	if (loginAs=="Student"){
+		var designation = "student"
+		var sql = "SELECT * from student_login where `student_id`='"+username+"' and `password`='"+password+"'";
+	}
+	else if (loginAs=="Instructor"){
+		var designation = "instructor"
+		var sql = "SELECT * from instructor_login where `instructor_id`='"+username+"' and `password`='"+password+"'";
+	}
+	else if (loginAs=="TA"){
+		var designation = "ta"
+		var sql = "SELECT * from ta_login where `ta_id`='"+username+"' and `password`='"+password+"'";
+	}
+	else{
+		isCorrectDesignation = 0
+		res.sendStatus(403)
+	}
+	if(isCorrectDesignation==1){
+		await db.query(sql, async function(err, results){
+			//correct userid and password
+			if(results.length){
 
-			var sql = "SELECT * from student where `student_id`='"+username+"'";
-			await db.query(sql, async function(err, results){
-				const name = results[0].name
-				const user = { name: username }
-				const accessToken = jwt.sign(user, 'this-is-a-secret')
-				res.json({ authToken: accessToken, name: name})
-			});
-		}
-		//incorrect userid or password
-		else{
-			res.sendStatus(403)
-		}
-	});
+				var sql = "SELECT * from "+designation+" where `"+designation+"_id`='"+username+"'";
+				await db.query(sql, async function(err, results){
+					const name = results[0].name
+					const user = { id: username, designation: designation }
+					const accessToken = jwt.sign(user, 'this-is-a-secret')
+					res.json({ authToken: accessToken, name: name})
+				});
+			}
+			//incorrect userid or password
+			else{
+				res.sendStatus(403)
+			}
+		});
+	}
 });
 
 
@@ -431,7 +451,7 @@ router.post('/add_ta_submit', isAuthenticated, async function(req, res, next) {
 						//check if email id of student and given email id of ta match
 						if(result[0].email==req.body.ta_email){
 							//add the ta in the database
-							sql = "INSERT INTO `ta_record`(`ta_id`, `student_id`, `email`) VALUES ('"+req.body.ta_id+"','"+req.body.student_id+"','"+req.body.ta_email+"')";
+							sql = "INSERT INTO `ta`(`ta_id`, `student_id`, `email`) VALUES ('"+req.body.ta_id+"','"+req.body.student_id+"','"+req.body.ta_email+"')";
 							await db.query(sql, async function (err, result, fields) {
 								if (err){
 									//writes error to the consle
@@ -462,7 +482,7 @@ router.post('/add_ta_submit', isAuthenticated, async function(req, res, next) {
 		}
 		else{
 			//add the ta in the database
-			sql = "INSERT INTO `ta_record`(`ta_id`, `email`) VALUES ('"+req.body.ta_id+"','"+req.body.ta_email+"')";
+			sql = "INSERT INTO `ta`(`ta_id`, `email`) VALUES ('"+req.body.ta_id+"','"+req.body.ta_email+"')";
 			await db.query(sql, async function (err, result, fields) {
 				if (err){
 					//writes error to the consle

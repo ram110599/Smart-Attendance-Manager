@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import model.ResObj;
@@ -25,6 +27,7 @@ public class LoginActivity extends AppCompatActivity {
     Button btnLogin;
     UserService userService;
     SharedPreferences sp;
+    RadioGroup RadGrpLoginAs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +38,7 @@ public class LoginActivity extends AppCompatActivity {
         edtPassword = (EditText) findViewById(R.id.edtPassword);
         btnLogin = (Button) findViewById(R.id.btnLogin);
         userService = ApiUtils.getUserService();
+        RadGrpLoginAs = (RadioGroup) findViewById(R.id.RadGrpLoginAs);
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -42,9 +46,29 @@ public class LoginActivity extends AppCompatActivity {
                 String username = edtUsername.getText().toString();
                 String password = edtPassword.getText().toString();
                 //validate form
-                if(validateLogin(username, password)){
-                    //do login
-                    doLogin(username, password);
+                int radioId = RadGrpLoginAs.getCheckedRadioButtonId();
+                if (radioId==-1){
+                    Toast.makeText(LoginActivity.this, "No answer has been selected", Toast.LENGTH_SHORT).show();
+                }
+                else {
+                    RadioButton radioButton = (RadioButton) findViewById(radioId);
+                    if (validateLogin(username, password)) {
+                        //do login
+                        String loginAs = "";
+                        if (((String)radioButton.getText()).equals("Student")){
+                            loginAs = "Student";
+                        }
+                        else if (((String)radioButton.getText()).equals("Instructor")){
+                            loginAs = "Instructor";
+                        }
+                        else if(((String)radioButton.getText()).equals("TA")){
+                            loginAs = "TA";
+                        }
+                        else{
+                            goToLoginActivity();
+                        }
+                        doLogin(username, password, loginAs);
+                    }
                 }
             }
         });
@@ -63,9 +87,9 @@ public class LoginActivity extends AppCompatActivity {
         return true;
     }
 
-    private void doLogin(final String username,final String password){
+    private void doLogin(final String username,final String password, final String loginAs){
         sp = getSharedPreferences("login",MODE_PRIVATE);
-        Call call = userService.loginReq(username,password);
+        Call call = userService.loginReq(username, password, loginAs);
         call.enqueue(new Callback() {
             @Override
             public void onResponse(Call call, Response response) {
@@ -74,9 +98,10 @@ public class LoginActivity extends AppCompatActivity {
                     if(tokenObj.getAuthToken()!=null){
                         //login start main activity
                         sp.edit().putString("authToken", tokenObj.getAuthToken()).apply();
+                        sp.edit().putString("loginAs", loginAs).apply();
 
                         Intent i = new Intent(LoginActivity.this, MainActivity.class);
-                        i.putExtra("username", tokenObj.getName());
+                        //i.putExtra("username", tokenObj.getName());
                         startActivity(i);
 
                     } else {
@@ -92,5 +117,10 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(LoginActivity.this, t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    public void goToLoginActivity(){
+        Intent i = new Intent(LoginActivity.this,LoginActivity.class);
+        startActivity(i);
     }
 }

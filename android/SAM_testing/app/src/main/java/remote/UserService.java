@@ -25,6 +25,6 @@ public interface UserService {
 
     @FormUrlEncoded
     @POST("api/login")
-    Call<TokenObj> loginReq(@Field("username") String username, @Field("password") String password);
+    Call<TokenObj> loginReq(@Field("username") String username, @Field("password") String password, @Field("loginAs") String loginAs);
 
 }

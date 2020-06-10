@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="a2016csb1057.iitrpr.ac.in.sam_testing">
 
-    <!--Internet Permission-->
+    <!-- Internet Permission -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
@@ -19,7 +19,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".LoginActivity"></activity>
+        <activity android:name=".LoginActivity" />
+        <activity android:name=".StudentMainActivity" />
+        <activity android:name=".InstructorMainActivity" />
+        <activity android:name=".TAMainActivity"></activity>
     </application>
 
 </manifest>
