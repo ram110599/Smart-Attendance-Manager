@@ -56,6 +56,124 @@ router.post('/api/login', async function(req, res, next) {
 });
 
 
+router.get('/api/student/get_courses', authenticateToken, async function(req, res, next){
+	//console.log(req.userNdesignation.id)
+	if (req.userNdesignation.designation=='student'){
+		var sql = "SELECT * from enrollment_record where `student_id`='"+req.userNdesignation.id+"'";
+		//console.log(sql)
+		await db.query(sql, async function(err, results){
+			if(err) console.log(err)
+			else{
+				if (results.length){
+					var enrolled_courses = [];
+					//correct student id
+					var succ = 0
+					for (var result in results){
+						//console.log(result)
+						var sql = "SELECT * from class_info where `class_info_id`='"+results[result].class_info_id+"'";
+						//console.log(sql)
+						await db.query(sql, async function(err, results2){
+							//correct student id
+							if(results2.length){
+								//console.log('lll')
+								succ = succ + 1
+								enrolled_courses.push({courseId: results2[0].course_id, classInfoId: results2[0].class_info_id});	
+								//console.log(enrolled_courses)	
+								if(succ==results.length){
+									//console.log(enrolled_courses)
+									res.contentType('application/json');
+									res.send(JSON.stringify(enrolled_courses));
+								}					
+							}
+							else{
+								res.sendStatus(500)
+							}
+						});
+					}
+				}
+				else{
+					res.sendStatus(403)
+				}
+			}
+		});
+	}
+	else if(req.userNdesignation.designation=='instructor'){
+		var sql = "SELECT * from class_instructor where `instructor_id`='"+req.userNdesignation.id+"'";
+		//console.log(sql)
+		await db.query(sql, async function(err, results){
+			if(err) console.log(err)
+			else{
+				if (results.length){
+					var enrolled_courses = [];
+					//correct student id
+					var succ = 0
+					for (var result in results){
+						//console.log(result)
+						var sql = "SELECT * from class_info where `class_info_id`='"+results[result].class_info_id+"'";
+						//console.log(sql)
+						await db.query(sql, async function(err, results2){
+							//correct student id
+							if(results2.length){
+								//console.log('lll')
+								succ = succ + 1
+								enrolled_courses.push({courseId: results2[0].course_id, classInfoId: results2[0].class_info_id});	
+								//console.log(enrolled_courses)	
+								if(succ==results.length){
+									//console.log(enrolled_courses)
+									res.contentType('application/json');
+									res.send(JSON.stringify(enrolled_courses));
+								}					
+							}
+							else{
+								res.sendStatus(500)
+							}
+						});
+					}
+				}
+				else{
+					res.sendStatus(403)
+				}
+			}
+		});
+	}
+	else{
+		res.sendStatus(403)
+	}
+});
+
+
+router.get('/api/student/get_course_details', authenticateToken, async function(req, res, next){
+	if (req.userNdesignation.designation=='student'){
+		var class_info_id = req.query.class
+		var student_id = req.userNdesignation.id
+		var sql = "SELECT * from attendance where `student_id`='"+student_id+"' and `class_info_id`='"+class_info_id+"'";
+		console.log(sql)
+		await db.query(sql, async function(err, results){
+			if(err){
+				console.log(err)
+				res.sendStatus(500)
+			}
+			else{
+				var sql = "SELECT * from attendance where `student_id`='"+student_id+"' and `class_info_id`='"+class_info_id+"' and `present`=1";
+				console.log(sql)
+				await db.query(sql, async function(err, results2){
+					if(err){
+						console.log(err)
+						res.sendStatus(500)
+					}
+					else{
+						res.json({ attendance: results2.length, totClasses: results.length})
+					}
+				});
+			}
+		});
+    }
+    else{
+		res.sendStatus(403)
+	}
+});
+
+
 router.get('/api/posts', authenticateToken, (req, res) => {
 	res.json({ "message": "congrats sahil"})
 });
@@ -68,10 +186,12 @@ function authenticateToken(req, res, next){
 
 	jwt.verify(token, 'this-is-a-secret', (err, user) => {
 		if (err) return res.sendStatus(403)
-		req.user = user
+		//console.log(user)
+		req.userNdesignation = user
 		next()
 	})
 };
+
 
 router.get('/api/login/t/123', function(req, res, next) {
 	res.json({ 
@@ -357,11 +477,25 @@ router.post('/add_student_submit', isAuthenticated, async function(req, res, nex
 				res.redirect('add_student_redirect');
 			}
 			else{
-				errors = [];
-				//not error, rather its a message to be displayed
-				errors.push({msg: "Successfully entered"});
-				req.session.errors = errors;
-				res.redirect("add_student_redirect");
+				sql = "INSERT INTO `student_login`(`student_id`, `password`) VALUES ('"+req.body.student_id+"','dummy')";
+				await db.query(sql, async function (err, result, fields) {
+					if (err){
+						//writes error to the consle
+						console.log(err);
+						errors = [];
+						//the errors are from database side like repeat of primary or unique key/error in connection, etc
+						errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+						req.session.errors = errors;
+						res.redirect('add_student_redirect');
+					}
+					else{
+						errors = [];
+						//not error, rather its a message to be displayed
+						errors.push({msg: "Successfully entered"});
+						req.session.errors = errors;
+						res.redirect("add_student_redirect");
+					}
+				});
 			}
 		});
 	}
@@ -398,11 +532,25 @@ router.post('/add_instructor_submit', isAuthenticated, async function(req, res, 
 				res.redirect('add_instructor_redirect');
 			}
 			else{
-				errors = [];
-				//not error, rather its a message to be displayed
-				errors.push({msg: "Successfully entered"});
-				req.session.errors = errors;
-				res.redirect("add_instructor_redirect");
+				sql = "INSERT INTO `instructor_login`(`instructor_id`, `password`) VALUES ('"+req.body.instructor_id+"','dummy')";
+				await db.query(sql, async function (err, result, fields) {
+					if (err){
+						//writes error to the consle
+						console.log(err);
+						errors = [];
+						//the errors are from database side like repeat of primary or unique key/error in connection, etc
+						errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+						req.session.errors = errors;
+						res.redirect('add_instructor_redirect');
+					}
+					else{
+						errors = [];
+						//not error, rather its a message to be displayed
+						errors.push({msg: "Successfully entered"});
+						req.session.errors = errors;
+						res.redirect("add_instructor_redirect");
+					}
+				});
 			}
 		});
 	}
@@ -416,8 +564,8 @@ router.get('/add_ta_redirect', isAuthenticated, async function(req, res, next) {
 });
 
 router.post('/add_ta_submit', isAuthenticated, async function(req, res, next) {
-	req.check('ta_id', 'No ID entered').isLength({min: 1}); //this checks the 'id' named parameter
-	req.check('ta_email', 'No email entered').isLength({min: 1});
+	req.check('student_id', 'No ID entered').isLength({min: 1}); //this checks the 'id' named parameter
+	//req.check('ta_email', 'No email entered').isLength({min: 1});
 	var errors = req.validationErrors();     //catches all the validation errors
 	//if errors exist then not validated. hence, sent back to add ta page
 	if (errors){
@@ -426,7 +574,7 @@ router.post('/add_ta_submit', isAuthenticated, async function(req, res, next) {
 	}
 	else{
 		//if student id has been entered
-		if(req.body.student_id){
+		//if(req.body.student_id){
 			//check whether student exists
 			sql = "SELECT * from student where student_id='"+req.body.student_id+"';";
 			await db.query(sql, async function (err, result, fields) {
@@ -449,9 +597,9 @@ router.post('/add_ta_submit', isAuthenticated, async function(req, res, next) {
 					}
 					else{
 						//check if email id of student and given email id of ta match
-						if(result[0].email==req.body.ta_email){
+						//if(result[0].email==req.body.ta_email){
 							//add the ta in the database
-							sql = "INSERT INTO `ta`(`ta_id`, `student_id`, `email`) VALUES ('"+req.body.ta_id+"','"+req.body.student_id+"','"+req.body.ta_email+"')";
+							sql = "INSERT INTO `ta`(`ta_id`, `email`) VALUES ('"+req.body.student_id+"','"+result[0].email+"')";
 							await db.query(sql, async function (err, result, fields) {
 								if (err){
 									//writes error to the consle
@@ -463,24 +611,38 @@ router.post('/add_ta_submit', isAuthenticated, async function(req, res, next) {
 									res.redirect('add_ta_redirect');
 								}
 								else{
-									errors = [];
-									//not error, rather its a message to be displayed
-									errors.push({msg: "Successfully entered"});
-									req.session.errors = errors;
-									res.redirect("add_ta_redirect");
+									sql = "INSERT INTO `ta_login`(`ta_id`, `password`) VALUES ('"+req.body.student_id+"','dummy')";
+									await db.query(sql, async function (err, result, fields) {
+										if (err){
+											//writes error to the consle
+											console.log(err);
+											errors = [];
+											//the errors are from database side like repeat of primary or unique key/error in connection, etc
+											errors.push({msg: "Could not enter in database, error occured: "+err.sqlMessage});
+											req.session.errors = errors;
+											res.redirect('add_ta_redirect');
+										}
+										else{
+											errors = [];
+											//not error, rather its a message to be displayed
+											errors.push({msg: "Successfully entered"});
+											req.session.errors = errors;
+											res.redirect("add_ta_redirect");
+										}
+									});
 								}
 							});
-						}
+						/*}
 						else{
 							errors.push({msg: "The email from student record of this student_id doesn't match with given email"})							
 							req.session.errors = errors;
 							res.redirect("add_ta_redirect");
-						}
+						}*/
 					}
 				}
 			});
-		}
-		else{
+		//}
+		/*else{
 			//add the ta in the database
 			sql = "INSERT INTO `ta`(`ta_id`, `email`) VALUES ('"+req.body.ta_id+"','"+req.body.ta_email+"')";
 			await db.query(sql, async function (err, result, fields) {
@@ -501,7 +663,7 @@ router.post('/add_ta_submit', isAuthenticated, async function(req, res, next) {
 					res.redirect("add_ta_redirect");
 				}
 			});
-		}
+		}*/
 	}
 });
 

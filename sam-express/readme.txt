@@ -17,7 +17,10 @@ git commit -m "..."
 git push -u origin master
 
 TODO:
-remove ta_id and use his student id instead
+the userService error can be corrected by definng UserService userService in begin and userService = Utils.getUserService();
+add a generate attendace record button for student
+add all the error part of sql querries in index.js
+add the removing stuff for admin
 set CRYPTO with salt for passwords
 make sure to see all the pages that can open with or without authentication
 make sure to clear the session errors when required(whenever errors are set then reset it at some point by req.session.errors=NULL;)
