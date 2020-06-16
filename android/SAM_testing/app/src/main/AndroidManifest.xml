@@ -22,7 +22,9 @@
         <activity android:name=".LoginActivity" />
         <activity android:name=".StudentMainActivity" />
         <activity android:name=".InstructorMainActivity" />
-        <activity android:name=".TAMainActivity"></activity>
+        <activity android:name=".TAMainActivity" />
+        <activity android:name=".StudentCourseMainActivity" />
+        <activity android:name=".InstructorCourseMainActivity"></activity>
     </application>
 
 </manifest>

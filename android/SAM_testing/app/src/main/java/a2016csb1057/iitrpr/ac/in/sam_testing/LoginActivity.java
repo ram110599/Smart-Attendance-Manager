@@ -103,6 +103,7 @@ public class LoginActivity extends AppCompatActivity {
                         Intent i = new Intent(LoginActivity.this, MainActivity.class);
                         //i.putExtra("username", tokenObj.getName());
                         startActivity(i);
+                        finish();
 
                     } else {
                         Toast.makeText(LoginActivity.this, "The username or password is incorrect", Toast.LENGTH_SHORT).show();
@@ -122,5 +123,6 @@ public class LoginActivity extends AppCompatActivity {
     public void goToLoginActivity(){
         Intent i = new Intent(LoginActivity.this,LoginActivity.class);
         startActivity(i);
+        finish();
     }
 }

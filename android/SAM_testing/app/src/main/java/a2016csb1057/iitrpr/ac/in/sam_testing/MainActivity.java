@@ -97,20 +97,24 @@ public class MainActivity extends AppCompatActivity {
     public void goToLoginActivity(){
         Intent i = new Intent(MainActivity.this,LoginActivity.class);
         startActivity(i);
+        finish();
     }
 
     public void goToStudentMainActivity(){
         Intent i = new Intent(MainActivity.this,StudentMainActivity.class);
         startActivity(i);
+        finish();
     }
 
     public void goToInstructorMainActivity(){
         Intent i = new Intent(MainActivity.this,InstructorMainActivity.class);
         startActivity(i);
+        finish();
     }
 
     public void goToTAMainActivity(){
         Intent i = new Intent(MainActivity.this,TAMainActivity.class);
         startActivity(i);
+        finish();
     }
 }
