@@ -1,5 +1,6 @@
 package a2016csb1057.iitrpr.ac.in.sam_testing;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -33,10 +34,11 @@ public class InstructorCourseMainActivity extends AppCompatActivity {
         btnEnrolledStudents = (Button) findViewById(R.id.btnEnrolledStudents);
         sp = getSharedPreferences("login",MODE_PRIVATE);
         String token = sp.getString("authToken","");
-        Bundle extras = getIntent().getExtras();
-        String courseId = "";
-        String classInfoId = "";
+        final Bundle extras = getIntent().getExtras();
+
         if (extras != null) {
+            final String courseId;
+            final String classInfoId;
             courseId = extras.getString("courseId");
             classInfoId = extras.getString("classInfoId");
             txtCourseId.setText("Course: " + courseId);
@@ -45,7 +47,10 @@ public class InstructorCourseMainActivity extends AppCompatActivity {
             btnTakeAttendance.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
+                    Intent i = new Intent(InstructorCourseMainActivity.this, InstructorTakeAttendActivity.class);
+                    i.putExtra("course", courseId);
+                    i.putExtra("class", classInfoId);
+                    startActivity(i);
                 }
             });
 
